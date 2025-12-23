@@ -14,7 +14,7 @@ export class Invoice {
   @Prop({ required: true })
   pdfPath: string;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   sentAt: Date | null;
 
   @Prop()

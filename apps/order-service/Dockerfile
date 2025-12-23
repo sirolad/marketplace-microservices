@@ -29,10 +29,9 @@ WORKDIR /app
 
 # Copy package files
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/apps/order-service/package*.json ./
 
 # Install production dependencies only
-RUN npm ci --production --workspaces=false
+RUN npm ci --omit=dev
 
 # Copy built application
 COPY --from=builder /app/apps/order-service/dist ./dist
