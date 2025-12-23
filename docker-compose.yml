@@ -1,0 +1,108 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: marketplace-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: marketplace
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - marketplace-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: marketplace-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - marketplace-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build:
+      context: .
+      dockerfile: apps/order-service/Dockerfile
+    container_name: marketplace-order-service
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/marketplace?authSource=admin
+      RABBITMQ_URI: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - marketplace-network
+    volumes:
+      - ./apps/order-service:/app/apps/order-service
+      - /app/apps/order-service/node_modules
+
+  invoice-service:
+    build:
+      context: .
+      dockerfile: apps/invoice-service/Dockerfile
+    container_name: marketplace-invoice-service
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/marketplace?authSource=admin
+      RABBITMQ_URI: amqp://admin:admin123@rabbitmq:5672
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - marketplace-network
+    volumes:
+      - ./apps/invoice-service:/app/apps/invoice-service
+      - /app/apps/invoice-service/node_modules
+      - invoice_uploads:/app/uploads
+
+  nginx:
+    image: nginx:alpine
+    container_name: marketplace-nginx
+    ports:
+      - "4000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - order-service
+      - invoice-service
+    networks:
+      - marketplace-network
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
+  invoice_uploads:
+
+networks:
+  marketplace-network:
+    driver: bridge

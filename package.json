@@ -1,0 +1,37 @@
+{
+  "name": "marketplace-microservices",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketplace microservices for order and invoice management",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "start:order": "npm run start --workspace=apps/order-service",
+    "start:invoice": "npm run start --workspace=apps/invoice-service",
+    "start:dev:order": "npm run start:dev --workspace=apps/order-service",
+    "start:dev:invoice": "npm run start:dev --workspace=apps/invoice-service",
+    "test": "npm run test --workspaces",
+    "test:cov": "npm run test:cov --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.2",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
